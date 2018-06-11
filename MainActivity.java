@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String paramValue = allEmails;
                 try {
-                    urlString = "http://192.168.2.7:5000/priority?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
+                    urlString = "http://192.168.1.2:5000/priority?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
 //                        urlString = "http://127.0.0.1:5000/?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
                     Log.d("URL Final",urlString);
                 } catch (UnsupportedEncodingException e) {
@@ -253,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String paramValue = allEmails;
                 try {
-                    urlString = "http://192.168.2.7:5000/spamham?emailList2=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
+                    urlString = "http://192.168.1.2:5000/spamham?emailList2=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
                     Log.d("Spam url",urlString);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
                 if (spamResultstring == null){
                     Toast.makeText(MainActivity.this, "moklay he...", Toast.LENGTH_SHORT).show();
                 }else {
-                    String[] spamparts = spamResultstring.split("\\] \\[");
+                    String[] spamparts = spamResultstring.split("\\], \\[");
 
                     final  List<String> sList = new ArrayList<String>(Arrays.asList(spamparts));
                     final ArrayAdapter<String> arrayAdapter2 = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_list_item_1, sList);
@@ -459,7 +459,6 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
     /**
      * Starts an activity in Google Play Services so the user can pick an account
      */
