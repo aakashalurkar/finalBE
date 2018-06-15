@@ -1,114 +1,71 @@
 package com.example.tensorflowtrial;
 
 import android.accounts.AccountManager;
-import android.annotation.TargetApi;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
-
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
 import android.os.Bundle;
-import android.app.Activity;
-import android.os.Environment;
-import android.support.v4.app.ActivityCompat;
+import android.preference.PreferenceManager;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.os.Bundle;
-import android.os.Trace;
-import android.preference.PreferenceManager;
-import android.support.annotation.RequiresApi;
-import android.text.TextUtils;
-import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
-import android.view.View;
 import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.AdapterView.OnItemClickListener;
 
-import com.example.tensorflowtrial.MySQLiteHelper;
-import com.example.tensorflowtrial.R;
 import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
 import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.gson.Gson;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicHeader;
-import org.apache.http.protocol.HTTP;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.tensorflow.contrib.android.TensorFlowInferenceInterface;
 
 public class MainActivity extends AppCompatActivity {
 
+    public static final String PREFS_NAME = "PrimeFile";
+    static final int REQUEST_CODE_PICK_ACCOUNT = 1000;
+    static final int REQUEST_CODE_RECOVER_FROM_AUTH_ERROR = 1001;
+    static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1002;
+    static final int READ_BLOCK_SIZE = 100;
+    private static final String TAG = "PlayHelloActivity";
+    private final static String GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+    private final static String SCOPE = "oauth2:" + GMAIL_SCOPE;
     //   public static String urlString="http://192.168.1.6:5000/?emailList=sid";
     public static String urlString;
     public static String priorityResult;
     public static String spamResultstring;
-
-    private static final String TAG = "PlayHelloActivity";
-    private final static String GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
-    private final static String SCOPE = "oauth2:" + GMAIL_SCOPE;
+    public ArrayList<String> fullEmailList;
+    public String allEmails = " ";
+    Button sendPrio;
+    Button sendSpam;
+    Button prioritiseButton;
+    Button spamButton;
+    Button callapi;
+    Gson gson = new Gson();
     private TextView mOut;
     private TextView spamResult;
     private ListView lView,listViewPrio,listViewSpam;
@@ -117,28 +74,9 @@ public class MainActivity extends AppCompatActivity {
     private ArrayList<String> b;
     private ArrayList<String> dateList;
     private ArrayList<String> fList;
-    public ArrayList<String> fullEmailList;
-
-    static final int REQUEST_CODE_PICK_ACCOUNT = 1000;
-    static final int REQUEST_CODE_RECOVER_FROM_AUTH_ERROR = 1001;
-    static final int REQUEST_CODE_RECOVER_FROM_PLAY_SERVICES_ERROR = 1002;
-    public static final String PREFS_NAME = "PrimeFile";
-
-    Button sendPrio;
-    Button sendSpam;
-    Button prioritiseButton;
-    Button spamButton;
-
-    Button callapi;
-    private String mEmail;
-    Gson gson = new Gson();
-
-    public String allEmails = " ";
 //    public String path = Environment.getExternalStorageDirectory().getAbsolutePath()
 //            ;
-
-
-    static final int READ_BLOCK_SIZE = 100;
+private String mEmail;
 //
 //    public MainActivity() {
 //    }
@@ -221,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String paramValue = allEmails;
                 try {
-                    urlString = "http://192.168.1.2:5000/priority?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
+                    urlString = "http://192.168.1.101:5000/priority?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
 //                        urlString = "http://127.0.0.1:5000/?emailList=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
                     Log.d("URL Final",urlString);
                 } catch (UnsupportedEncodingException e) {
@@ -253,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String paramValue = allEmails;
                 try {
-                    urlString = "http://192.168.1.2:5000/spamham?emailList2=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
+                    urlString = "http://192.168.1.101:5000/spamham?emailList2=" + java.net.URLEncoder.encode(paramValue, "UTF-8");
                     Log.d("Spam url",urlString);
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
@@ -289,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
 
                 if (priorityResult == null){
-                    Toast.makeText(MainActivity.this, "moklay he...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, " No data received", Toast.LENGTH_SHORT).show();
                 }else {
                     String[] prioparts = priorityResult.split("\\]\\[");
                     final List<String> pList = new ArrayList<String>(Arrays.asList(prioparts));
@@ -336,9 +274,9 @@ public class MainActivity extends AppCompatActivity {
 //                }
 
                 if (spamResultstring == null){
-                    Toast.makeText(MainActivity.this, "moklay he...", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(MainActivity.this, "no data received", Toast.LENGTH_SHORT).show();
                 }else {
-                    String[] spamparts = spamResultstring.split("\\], \\[");
+                    String[] spamparts = spamResultstring.split(", \\',\\'\\] \\[");
 
                     final  List<String> sList = new ArrayList<String>(Arrays.asList(spamparts));
                     final ArrayAdapter<String> arrayAdapter2 = new ArrayAdapter<String>(MainActivity.this,android.R.layout.simple_list_item_1, sList);
@@ -476,10 +414,7 @@ public class MainActivity extends AppCompatActivity {
         ConnectivityManager connMgr = (ConnectivityManager)
                 getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            return true;
-        }
-        return false;
+        return networkInfo != null && networkInfo.isConnected();
     }
 
 
@@ -589,6 +524,32 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        super.onOptionsItemSelected(item);
+
+        switch (item.getItemId()) {
+
+            case R.id.sendToPriority:
+                sendPrio.performClick();
+                Toast.makeText(MainActivity.this, "sending prio data to flask...", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.sendToSpam:
+                sendSpam.performClick();
+                Toast.makeText(MainActivity.this, "sending spam data to flask...", Toast.LENGTH_SHORT).show();
+                break;
+        }
+        return true;
+    }
+
     private class StableArrayAdapter extends ArrayAdapter<String> {
 
         HashMap<String, Integer> mIdMap = new HashMap<String, Integer>();
@@ -692,33 +653,5 @@ public class MainActivity extends AppCompatActivity {
             return null;
         }
 
-    }
-
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
-
-        switch (item.getItemId()) {
-
-            case R.id.sendToPriority:
-                sendPrio.performClick();
-                Toast.makeText(MainActivity.this, "sending prio data to flask...", Toast.LENGTH_SHORT).show();
-                break;
-            case R.id.sendToSpam:
-                sendSpam.performClick();
-                Toast.makeText(MainActivity.this, "sending spam data to flask...", Toast.LENGTH_SHORT).show();
-                break;
-        }
-        return true;
     }
 }
